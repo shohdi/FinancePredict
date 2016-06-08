@@ -1,0 +1,610 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" ng-app="financeApp">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis it</title>
+
+    <link rel="stylesheet" href="Content/bootstrap.css" />
+
+    <script src="Scripts/angular.js"></script>
+    <script src="Scripts/angular-ui/ui-bootstrap.js"></script>
+
+
+    <script type="text/javascript">
+        angular.module("financeApp", []).config(function ($httpProvider) {
+            $httpProvider.interceptors.push('jsonpInterceptor');
+        })
+        .value("urlFormat", 'http://chartapi.finance.yahoo.com/instrument/1.0/{StockName}/chartdata;type=quote;range=1d/json')
+            .value("oneItemUrl", 'http://finance.yahoo.com/webservice/v1/symbols/{StockName}/quote?format=json&callback=finance_charts_json_callback')
+            .constant("stockName", "{StockName}")
+        .constant('functionName', 'finance_charts_json_callback')
+            .factory('jsonpInterceptor', function ($timeout, $window, $q, functionName) {
+                return {
+                    'request': function (config) {
+                        if (config.method === 'JSONP') {
+                            var callbackId = angular.callbacks.counter.toString(36);
+                            if (config.callbackName != functionName) {
+                               
+
+                                config.callbackName = 'angular_callbacks_' + callbackId;
+                            }
+                            config.url = config.url.replace('JSON_CALLBACK', config.callbackName);
+
+                            $timeout(function () {
+                                $window[config.callbackName] = angular.callbacks['_' + callbackId];
+                            }, 0, false);
+                        }
+
+                        return config;
+                    },
+
+                    'response': function (response) {
+                        var config = response.config;
+                        if (config.method === 'JSONP') {
+                            delete $window[config.callbackName]; // cleanup
+                        }
+
+                        return response;
+                    },
+
+                    'responseError': function (rejection) {
+                        var config = rejection.config;
+                        if (config.method === 'JSONP') {
+                            delete $window[config.callbackName]; // cleanup
+                        }
+
+                        return $q.reject(rejection);
+                    }
+                };
+            })
+            .service("myModel", function ($http, urlFormat, stockName, functionName, oneItemUrl) {
+            var service = this;
+            
+            service.getLiveData = function (stock) {
+                var url = oneItemUrl.replace(stockName, stock);
+
+                return $http.jsonp(url, {
+
+                    callbackName: functionName
+                });
+            };
+
+            service.getData = function (stock) {
+                var url = urlFormat.replace(stockName, stock);
+
+                return $http.jsonp(url, {
+                    
+                    callbackName: functionName
+                });
+            };
+
+            service.stocks = [
+                { stockName: 'EUR/USD', stockSymbol: 'EURUSD=X' },
+                { stockName: 'AUD/CAD', stockSymbol: 'AUDCAD=X' },
+                { stockName: 'NZD/USD', stockSymbol: 'NZDUSD=X' },
+                { stockName: 'USD/CHF', stockSymbol: 'USDCHF=X' },
+                { stockName: 'EUR/GBP', stockSymbol: 'EURGBP=X' },
+                { stockName: 'GBP/USD', stockSymbol: 'GBPUSD=X' },
+                { stockName: 'USD/RUB', stockSymbol: 'USDRUB=X' },
+                { stockName: 'EUR/JPY', stockSymbol: 'EURJPY=X' },
+                { stockName: 'EUR/NZD', stockSymbol: 'EURNZD=X' },
+                { stockName: 'CAD/CHF', stockSymbol: 'CADCHF=X' },
+                { stockName: 'EUR/AUD', stockSymbol: 'EURAUD=X' },
+                { stockName: 'AUD/JPY', stockSymbol: 'AUDJPY=X' },
+                { stockName: 'USD/CAD', stockSymbol: 'USDCAD=X' },
+                { stockName: 'GBP/USD', stockSymbol: 'GBPUSD=X' },
+                 { stockName: 'GBP/CHF', stockSymbol: 'GBPCHF=X' },
+                  { stockName: 'EUR/CAD', stockSymbol: 'EURCAD=X' },
+                  { stockName: 'GBP/CAD', stockSymbol: 'GBPCAD=X' },
+                   { stockName: 'CHF/JPY', stockSymbol: 'CHFJPY=X' },
+
+
+            ];
+           
+
+
+            }).controller("bodyController", function (myModel,$interval) {
+                var body = this;
+
+            body.model = myModel;
+            body.config = {
+                minutes: function(){
+                    if(this.minutesStr == '')
+                        return 0;
+                     else
+                        return parseInt(this.minutesStr);
+                }
+                ,minutesStr :'13'
+                , symbol: 'EURUSD=X'
+                , backMinutes: 90
+                , symbolDrop: 'EURUSD=X'
+            };
+           
+            body.showResult = function (config) {
+                body.clear();
+                body.model.getData(config.symbol).then(function (result) {
+                    console.log(result.data);
+                    body.modelData = result.data;
+
+                    body.analysisData(body.modelData,config);
+                    
+                    //body.startTimeoutToAlert();
+
+                }, function (error) {
+                    console.log(error);
+                });
+            };
+
+            body.startTimeoutToAlert = function () {
+                body.timerBody();
+                body.timer = $interval(body.timerBody,60000);
+            };
+
+            body.timerBody = function () {
+                
+
+                if(body.bindModel)
+                {
+                    var endEndDate =body.substractMinuteFromDate( body.getEndOfDate( body.bindModel.endDate,body.config.minutes()),1);
+                    body.model.getLiveData(body.config.symbol).then(function (ret) {
+                        body.updatedPrice = ret.data.list.resources[0].resource.fields.price;
+                        if (body.updatedPrice < body.bindModel.avgUp && body.bindModel.high > body.bindModel.low) {
+                            alert('High now !');
+                            body.sendNotif('High now ! ');
+                        }
+                        else if (body.updatedPrice > body.bindModel.avgDown && body.bindModel.low > body.bindModel.high) {
+                            alert('Low now !');
+                            body.sendNotif('Low now ! ');
+                        }
+                    });
+                }
+
+            };
+
+            body.getEndOfDate = function(startDate,minutes){
+                var retDate = body.addMinuteToDate(startDate, minutes);
+                //while((retDate.getMinutes() % 15) > 0)
+                //{
+                //    retDate = body.substractMinuteFromDate(retDate, 1);
+
+                //}
+                return retDate;
+            };
+
+            body.getDateWithoutSeconds = function (date) {
+                return new Date(date - (date.getSeconds() * 1000));
+            };
+
+            body.substractMinuteFromDate = function (date, minute) {
+                return new Date(date - (minute * 60 * 1000));
+            };
+
+            body.addMinuteToDate = function (date, minute) {
+                var newDate = new Date(date);
+                newDate.setMinutes(newDate.getMinutes() + minute);
+                return newDate;
+            };
+
+          /*  body.avg = function (arr) {
+                var sum = 0;
+                angular.forEach(arr, function (item, val) {
+                    sum = sum + item;
+                });
+
+                return sum / arr.length;
+
+            };*/
+
+            body.analysisData = function (data, config) {
+                var keydData = {};
+                var last = null;
+                angular.forEach(data.series, function (ser, key) {
+
+
+                    ser.myDate = new Date(ser.Timestamp * 1000);
+
+                    //get date without seconds
+                    var dateMinusSec = body.getDateWithoutSeconds(ser.myDate);
+                    ser.keyDate = dateMinusSec;
+                    if (!keydData[dateMinusSec]) {
+                        keydData[dateMinusSec] = ser;
+                        keydData[dateMinusSec].closes = [];
+                        keydData[dateMinusSec].closes.push(ser.close);
+                    }
+                    else {
+                        keydData[dateMinusSec].closes.push(ser.close);
+                    }
+
+
+                    if (!keydData.first) {
+                        keydData.first = keydData[dateMinusSec];
+                    }
+
+                    last = keydData[dateMinusSec];
+                });
+
+                keydData.last = last;
+
+                //complete gap
+
+                var lastDataFound = keydData.first;
+                var myDataFirstDate = keydData.first.keyDate;
+               
+                while (myDataFirstDate < endDate)
+                {
+                    if (!keydData[myDataFirstDate])
+                    {
+                        keydData[myDataFirstDate] = lastDataFound;
+                    }
+                    else
+                    {
+                        lastDataFound = keydData[myDataFirstDate];
+                    }
+
+                    myDataFirstDate = body.addMinuteToDate(myDataFirstDate, 1);
+                }
+
+                console.log(keydData);
+
+                //calculate it
+                var endDate = last.keyDate;
+
+                var startDate = body.substractMinuteFromDate(endDate, config.backMinutes);
+
+                if (startDate < keydData.first.keyDate)
+                    startDate = keydData.first.keyDate;
+
+
+                body.startAnalysisProcess(keydData, startDate, endDate, config);
+
+
+
+
+
+
+            };
+
+
+            body.getEndClass = function (obj) {
+                if (obj.isEnd) {
+                    if (obj.myhigh > obj.mylow)
+                        return 'success';
+                    else if (obj.myhigh == obj.mylow)
+                        return 'info';
+                    else
+                        return 'danger';
+                }
+                else
+                {
+                    return '';
+                }
+            };
+
+            body.getEndPercentage = function (obj) {
+                if (obj.isEnd) {
+                    if (obj.myhigh > obj.mylow)
+                        return 100 *( obj.myhigh/(obj.myhigh + obj.mylow ));
+                    else if (obj.myhigh == obj.mylow)
+                        return 0;
+                    else
+                        return 100 * (obj.mylow / (obj.myhigh + obj.mylow));
+                }
+                else {
+                    return '';
+                }
+            };
+
+            body.getEndIClass = function (obj) {
+                if (obj.isEnd) {
+                    if (obj.myhigh > obj.mylow)
+                        return 'glyphicon glyphicon-arrow-up text-success';
+                    else if (obj.myhigh == obj.mylow)
+                        return '';
+                    else
+                        return 'glyphicon glyphicon-arrow-down text-danger';;
+                }
+                else {
+                    return '';
+                }
+            };
+
+            body.sendNotif = function (text) {
+                try
+                {
+                    if (Notification.permission === "granted") {
+                        // If it's okay let's create a notification
+                        var notification = new Notification(text);
+                    }
+
+                        // Otherwise, we need to ask the user for permission
+                    else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission(function (permission) {
+                            // If the user accepts, let's create a notification
+                            if (permission === "granted") {
+                                var notification = new Notification(text);
+                            }
+                        });
+                    }
+                }
+                catch(ex)
+                {
+
+                }
+
+            };
+
+            
+
+            body.startAnalysisProcess = function (keyData, startDate, endDate, config) {
+                var high = 0;
+                var equal = 0;
+                var low = 0;
+                var count = 0;
+                var avgUp = 0;
+                var avgDown = 0;
+
+                var myStartDate = startDate;
+                var myEndDate = body.getEndOfDate(myStartDate,config.minutes());
+                var myAllData = [];
+                while (myEndDate <= endDate)
+                {
+                    try
+                    {
+                        if (!keyData[myEndDate].isEnd) {
+                            keyData[myEndDate].isEnd = true;
+                            keyData[myEndDate].myhigh = 0;
+                            keyData[myEndDate].mylow = 0;
+                        }
+
+                       
+
+
+                        if (myAllData.indexOf(keyData[myStartDate])<0)
+                           myAllData.push(keyData[myStartDate]);
+                        if (myAllData.indexOf(keyData[myEndDate]) < 0)
+                            myAllData.push(keyData[myEndDate]);
+
+
+
+                        var diff = keyData[myEndDate].close - keyData[myStartDate].close;
+
+                        if (diff > 0)
+                        {
+                            high = high + 1;
+                            avgUp = avgUp + keyData[myStartDate].close;
+                            keyData[myEndDate].myhigh++;
+                        }
+                        else if (diff == 0)
+                        {
+                            equal = equal + 1;
+                            
+                        }
+                        else
+                        {
+                            low = low + 1;
+                            avgDown = avgDown + keyData[myStartDate].close;
+                            keyData[myEndDate].mylow++;
+                        }
+
+                        count = count + 1;
+
+
+                    
+
+                    }
+                    catch(ex)
+                    {
+                        console.error(ex);
+                        console.log('error at start ' , myStartDate, ' end ' , myEndDate );
+                    }
+                    myStartDate = body.addMinuteToDate(myStartDate, 1);
+                    myEndDate = body.getEndOfDate(myStartDate, config.minutes());
+                }
+
+                if (count > 0) {
+                    avgDown = avgDown / low;
+                    avgUp = avgUp / high;
+                    body.bindModel = {};
+                    body.bindModel.error = null;
+                    body.bindModel.high = (high / count) * 100;
+                    body.bindModel.low = (low / count) * 100;
+                    body.bindModel.equal = (equal / count) * 100;
+                    body.bindModel.startDate = startDate;
+                    body.bindModel.endDate = endDate;
+                    body.bindModel.lastPrice = keyData.last.close;
+                    body.bindModel.firstPrice = keyData[startDate].close;
+                    body.bindModel.avgUp = avgUp;
+                    body.bindModel.avgDown = avgDown;
+
+                    body.bindModel.allData = myAllData;
+                }
+                else
+                {
+                    body.bindModel = {};
+                    body.bindModel.error = 'Not enough data!';
+                }
+
+            };
+
+            body.clear = function () {
+                if (body.timer)
+                    $interval.cancel(body.timer);
+                body.bindModel = null;
+            };
+
+
+            body.calculateEndDateOfSelection = function () {
+                var minutes = body.config.minutes();
+                if (minutes > 0) {
+                    body.config.endDate = body.getDateWithoutSeconds( body.getEndOfDate(new Date(), minutes));
+                }
+                else
+                {
+                    body.config.endDate = null;
+                }
+            };
+
+            body.changeStock = function () {
+                if(body.config.symbolDrop !='')
+                {
+                    body.config.symbol = body.config.symbolDrop;
+                }
+            };
+
+
+                //call startup
+            body.calculateEndDateOfSelection();
+            body.sendNotif('I am started!');
+
+        });
+
+        
+    </script>
+
+    <!-- cordova script (this will be a 404 during development) -->
+    <script src="cordova.js"></script>
+</head>
+<body ng-controller="bodyController as body">
+    <div class="row">
+        <div class="panel panel-default col-md-12">
+            <div class="panel-heading">
+                <h3>Fill you input</h3>
+            </div>
+            <div class="panel-body">
+                <form name="calculateForm" novalidate>
+                    <div class="form-group">
+                        <label for="minutes" class="control-label">How many minutes ?</label>
+                        <select name="minutes" ng-model="body.config.minutesStr" ng-change="body.calculateEndDateOfSelection()" class="form-control">
+                            <option value="">Select</option>
+                            <option value="13">13 minutes</option>
+                            <option value="15">15 minutes</option>
+                            <option value="28">28 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="43">43 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">60 minutes</option>
+                            <option value="75">75 minutes</option>
+                            <option value="90">90 minutes</option>
+                            <option value="105">105 minutes</option>
+                            <option value="120">120 minutes</option>
+                        </select>
+                        <div class="text-info">
+                            <i class="glyphicon glyphicon-time text-info"></i> End time :  {{ body.config.endDate}}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="symbol" lass="control-label">Stock/Forex Name ?</label>
+                        <input type="text" name="symbol" ng-model="body.config.symbol" class="form-control" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="symbolDrop" lass="control-label">Stock/Forex Name ? (Select)</label>
+                        <select  name="symbolDrop"  class="form-control" ng-change="body.changeStock()" ng-model="body.config.symbolDrop" >
+                            <option value="">Select</option>
+                            <option ng-repeat="stock in body.model.stocks" value="{{stock.stockSymbol}}">
+                                {{stock.stockName}}
+                            </option>
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="backMinutes" lass="control-label">How many minutes back ?</label>
+                        <input type="text" name="backMinutes" ng-model="body.config.backMinutes" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-success" ng-disabled="!calculateForm.$valid" ng-click="body.showResult(body.config)">Calculate</button>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-danger" ng-click="body.clear()">Clear Results</button>
+                    </div>
+                </form>
+                <div ng-show="body.bindModel && !body.bindModel.error">
+                    <hr ng-show="body.bindModel" />
+
+                    <h3 ng-show="body.bindModel">Result :</h3>
+                    <table ng-show="body.bindModel">
+                        <tr>
+                            <td>
+                                Live price
+                            </td>
+                            <td>
+                                {{body.updatedPrice | number:5}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>First price</td>
+                            <td>{{body.bindModel.firstPrice | number:5}} </td>
+                        </tr>
+                        <tr>
+                            <td>Last price</td>
+                            <td>{{body.bindModel.lastPrice | number:5}} </td>
+                        </tr>
+                        <tr>
+                            <td>From</td>
+                            <td>{{body.bindModel.startDate}}</td>
+                        </tr>
+                        <tr>
+                            <td>To</td>
+                            <td>{{body.bindModel.endDate}}</td>
+                        </tr>
+                        <tr>
+                            <td>Low percentage</td>
+                            <td><i ng-show="body.bindModel.low" class="glyphicon glyphicon-arrow-down text-danger"></i> {{body.bindModel.low | number:2}}  % <br/> Buy h than  : {{body.bindModel.avgDown | number:5}}</td>
+                        </tr>
+                        <tr>
+                            <td>High percentage</td>
+                            <td><i ng-show="body.bindModel.high" class="glyphicon glyphicon-arrow-up text-success"></i> {{body.bindModel.high | number:2}}  % <br /> buy l than  : {{body.bindModel.avgUp | number:5}}</td>
+                        </tr>
+                        <tr>
+                            <td>equality percentage</td>
+                            <td> {{body.bindModel.equal | number:2}} %</td>
+                        </tr>
+                    </table>
+
+                    <hr />
+
+                    <h2>values :</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    time
+                                </th>
+                                <th>
+                                    close
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-class="body.getEndClass(item)" ng-repeat="item in body.bindModel.allData | orderBy:'keyDate':true">
+                                <td>
+                                    {{item.keyDate}}
+                                    <i ng-class="body.getEndIClass(item)"></i>
+                                    {{body.getEndPercentage(item) | number:2}} %
+                                </td>
+                                <td>
+                                    {{item.close | number:5}}
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+                <div ng-show="body.bindModel && body.bindModel.error" class="text-danger">
+                    {{body.bindModel.error}}
+                </div>
+
+            </div>
+        </div>
+    </div>
+   
+
+
+    
+</body>
+</html>
+
