@@ -58,7 +58,69 @@
                     }
                 };
             })
-            .service("myModel", function ($http, urlFormat, stockName, functionName, oneItemUrl) {
+            .service('dateService', function () { 
+                var body = this;
+                body.getEndOfDate = function (startDate, minutes) {
+                    var retDate = body.addMinuteToDate(startDate, minutes);
+                    //while((retDate.getMinutes() % 15) > 0)
+                    //{
+                    //    retDate = body.substractMinuteFromDate(retDate, 1);
+
+                    //}
+                    return retDate;
+                };
+
+                body.getDateWithoutSeconds = function (date) {
+                    return new Date(date - (date.getSeconds() * 1000));
+                };
+
+                body.substractMinuteFromDate = function (date, minute) {
+                    return new Date(date - (minute * 60 * 1000));
+                };
+
+                body.addMinuteToDate = function (date, minute) {
+                    var newDate = new Date(date);
+                    newDate.setMinutes(newDate.getMinutes() + minute);
+                    return newDate;
+                };
+
+            })
+            .service('deferSerialService', function ($q) {
+                var service = this;
+                
+                service.getDefObj = function (func,data) {
+                    var myDef = {};
+                    myDef.def = $q.defer();
+                    myDef.invoke = function () {
+                        func(myDef).then(function () {
+                            myDef.def.resolve();
+                        });
+                    };
+                     
+                    myDef.then = function (obj) {
+                        myDef.def.promise.then(function () {
+                            obj.invoke();
+                        });
+                    };
+                    
+                    myDef.thenMethod = function (method) {
+                        myDef.def.promise.then(function(){
+                            method();
+                        });
+                    };
+                    
+                    if (data == null) {
+                        myDef.data = null;
+                    }
+                    else {
+                        myDef.data = data;
+                    }
+                    
+                    return myDef;
+                };
+
+            })
+            .service("myModel", function ($http, urlFormat, stockName, functionName, oneItemUrl, $q, $timeout, dateService) {
             var service = this;
             
             service.getLiveData = function (stock) {
@@ -106,117 +168,22 @@
 
             ];
            
-
-
-            })
-            .service("cordovaCall", function ($q) {
-                var service = this;
-
-                service.callCordova = function () {
-                    var deferred = $q.defer();
-                    document.addEventListener('deviceready', function () {
-                        deferred.resolve();
-                    }, false);
-                    return deferred.promise;
-                };
-
-            })
-            .controller("bodyController", function (myModel, $interval, cordovaCall) {
-                var body = this;
-                body.cordovaCall = cordovaCall;
-                body.cordovaCall.callCordova().then(function () {
-                    cordova.plugins.backgroundMode.enable();
-                });
-            body.model = myModel;
-            body.config = {
-                minutes: function(){
-                    if(this.minutesStr == '')
-                        return 0;
-                     else
-                        return parseInt(this.minutesStr);
-                }
-                ,minutesStr :'13'
-                , symbol: 'EURUSD=X'
-                , backMinutes: 90
-                , symbolDrop: 'EURUSD=X'
-            };
-           
-            body.showResult = function (config) {
-                body.clear();
-                body.model.getData(config.symbol).then(function (result) {
-                    console.log(result.data);
-                    body.modelData = result.data;
-
-                    body.analysisData(body.modelData,config);
-                    
-                    //body.startTimeoutToAlert();
-
-                }, function (error) {
-                    console.log(error);
-                });
-            };
-
-            body.startTimeoutToAlert = function () {
-                body.timerBody();
-                body.timer = $interval(body.timerBody,60000);
-            };
-
-            body.timerBody = function () {
+            service.getOneItemData = function (item, config) {
+                var def = $q.defer();
                 
-
-                if(body.bindModel)
-                {
-                    var endEndDate =body.substractMinuteFromDate( body.getEndOfDate( body.bindModel.endDate,body.config.minutes()),1);
-                    body.model.getLiveData(body.config.symbol).then(function (ret) {
-                        body.updatedPrice = ret.data.list.resources[0].resource.fields.price;
-                        if (body.updatedPrice < body.bindModel.avgUp && body.bindModel.high > body.bindModel.low) {
-                            alert('High now !');
-                            body.sendNotif('High now ! ');
-                        }
-                        else if (body.updatedPrice > body.bindModel.avgDown && body.bindModel.low > body.bindModel.high) {
-                            alert('Low now !');
-                            body.sendNotif('Low now ! ');
-                        }
-                    });
-                }
-
-            };
-
-            body.getEndOfDate = function(startDate,minutes){
-                var retDate = body.addMinuteToDate(startDate, minutes);
-                //while((retDate.getMinutes() % 15) > 0)
-                //{
-                //    retDate = body.substractMinuteFromDate(retDate, 1);
-
-                //}
-                return retDate;
-            };
-
-            body.getDateWithoutSeconds = function (date) {
-                return new Date(date - (date.getSeconds() * 1000));
-            };
-
-            body.substractMinuteFromDate = function (date, minute) {
-                return new Date(date - (minute * 60 * 1000));
-            };
-
-            body.addMinuteToDate = function (date, minute) {
-                var newDate = new Date(date);
-                newDate.setMinutes(newDate.getMinutes() + minute);
-                return newDate;
-            };
-
-          /*  body.avg = function (arr) {
-                var sum = 0;
-                angular.forEach(arr, function (item, val) {
-                    sum = sum + item;
+                service.getData(item).then(function (result) {
+                    console.log(result.data);
+                   
+                   
+                    
+                    var bindModel =  service.analysisData(result.data, config);
+                    def.resolve(bindModel);
                 });
 
-                return sum / arr.length;
+                return def.promise;
+            };
 
-            };*/
-
-            body.analysisData = function (data, config) {
+            service.analysisData = function (data, config) {
                 var keydData = {};
                 var last = null;
                 angular.forEach(data.series, function (ser, key) {
@@ -225,7 +192,7 @@
                     ser.myDate = new Date(ser.Timestamp * 1000);
 
                     //get date without seconds
-                    var dateMinusSec = body.getDateWithoutSeconds(ser.myDate);
+                    var dateMinusSec = dateService.getDateWithoutSeconds(ser.myDate);
                     ser.keyDate = dateMinusSec;
                     if (!keydData[dateMinusSec]) {
                         keydData[dateMinusSec] = ser;
@@ -250,19 +217,16 @@
 
                 var lastDataFound = keydData.first;
                 var myDataFirstDate = keydData.first.keyDate;
-               
-                while (myDataFirstDate < endDate)
-                {
-                    if (!keydData[myDataFirstDate])
-                    {
+
+                while (myDataFirstDate < endDate) {
+                    if (!keydData[myDataFirstDate]) {
                         keydData[myDataFirstDate] = lastDataFound;
                     }
-                    else
-                    {
+                    else {
                         lastDataFound = keydData[myDataFirstDate];
                     }
 
-                    myDataFirstDate = body.addMinuteToDate(myDataFirstDate, 1);
+                    myDataFirstDate = dateService.addMinuteToDate(myDataFirstDate, 1);
                 }
 
                 console.log(keydData);
@@ -270,20 +234,183 @@
                 //calculate it
                 var endDate = last.keyDate;
 
-                var startDate = body.substractMinuteFromDate(endDate, config.backMinutes);
+                var startDate = dateService.substractMinuteFromDate(endDate, config.backMinutes);
 
                 if (startDate < keydData.first.keyDate)
                     startDate = keydData.first.keyDate;
 
 
-                body.startAnalysisProcess(keydData, startDate, endDate, config);
+                return service.startAnalysisProcess(keydData, startDate, endDate, config);
+            };
+
+            service.startAnalysisProcess = function (keyData, startDate, endDate, config) {
+                var high = 0;
+                var equal = 0;
+                var low = 0;
+                var count = 0;
+                var avgUp = 0;
+                var avgDown = 0;
+
+                var myStartDate = startDate;
+                var myEndDate = dateService.getEndOfDate(myStartDate, config.minutes());
+                var myAllData = [];
+                while (myEndDate <= endDate) {
+                    try {
+                        if (!keyData[myEndDate].isEnd) {
+                            keyData[myEndDate].isEnd = true;
+                            keyData[myEndDate].myhigh = 0;
+                            keyData[myEndDate].mylow = 0;
+                        }
 
 
 
 
+                        if (myAllData.indexOf(keyData[myStartDate]) < 0)
+                            myAllData.push(keyData[myStartDate]);
+                        if (myAllData.indexOf(keyData[myEndDate]) < 0)
+                            myAllData.push(keyData[myEndDate]);
 
+
+
+                        var diff = keyData[myEndDate].close - keyData[myStartDate].close;
+
+                        if (diff > 0) {
+                            high = high + 1;
+                            avgUp = avgUp + keyData[myStartDate].close;
+                            keyData[myEndDate].myhigh++;
+                        }
+                        else if (diff == 0) {
+                            equal = equal + 1;
+
+                        }
+                        else {
+                            low = low + 1;
+                            avgDown = avgDown + keyData[myStartDate].close;
+                            keyData[myEndDate].mylow++;
+                        }
+
+                        count = count + 1;
+
+
+
+
+                    }
+                    catch (ex) {
+                        console.error(ex);
+                        console.log('error at start ', myStartDate, ' end ', myEndDate);
+                    }
+                    myStartDate = dateService.addMinuteToDate(myStartDate, 1);
+                    myEndDate = dateService.getEndOfDate(myStartDate, config.minutes());
+                }
+                
+                var bindModel = {};
+                if (count > 0) {
+                    avgDown = avgDown / low;
+                    avgUp = avgUp / high;
+                    
+                    bindModel.error = null;
+                    bindModel.high = (high / count) * 100;
+                    bindModel.low = (low / count) * 100;
+                    bindModel.equal = (equal / count) * 100;
+                    bindModel.startDate = startDate;
+                    bindModel.endDate = endDate;
+                    bindModel.lastPrice = keyData.last.close;
+                    bindModel.firstPrice = keyData[startDate].close;
+                    bindModel.avgUp = avgUp;
+                    bindModel.avgDown = avgDown;
+
+                    bindModel.allData = myAllData;
+                }
+                else {
+                    bindModel = {};
+                    bindModel.error = 'Not enough data!';
+                }
+
+                return bindModel;
 
             };
+
+                
+            })
+            .service("cordovaCall", function ($q) {
+                var service = this;
+
+                service.callCordova = function () {
+                    var deferred = $q.defer();
+                    document.addEventListener('deviceready', function () {
+                        deferred.resolve();
+                    }, false);
+                    return deferred.promise;
+                };
+
+            })
+            .controller("bodyController", function (myModel, $interval, cordovaCall, dateService) {
+                var body = this;
+                body.cordovaCall = cordovaCall;
+                body.cordovaCall.callCordova().then(function () {
+                    cordova.plugins.backgroundMode.enable();
+                });
+            body.model = myModel;
+            body.config = {
+                minutes: function(){
+                    if(this.minutesStr == '')
+                        return 0;
+                     else
+                        return parseInt(this.minutesStr);
+                }
+                ,minutesStr :'13'
+                , symbol: 'EURUSD=X'
+                , backMinutes: 90
+                , symbolDrop: 'EURUSD=X'
+            };
+           
+            body.showResult = function (config) {
+                body.clear();
+                body.model.getOneItemData(config.symbol,config).then(function (bindModel) {
+                    body.bindModel = bindModel;
+                });
+                
+            };
+
+            body.startTimeoutToAlert = function () {
+                body.timerBody();
+                body.timer = $interval(body.timerBody,60000);
+            };
+
+            body.timerBody = function () {
+                
+
+                if(body.bindModel)
+                {
+                    var endEndDate =dateService.substractMinuteFromDate( dateService.getEndOfDate( body.bindModel.endDate,body.config.minutes()),1);
+                    body.model.getLiveData(body.config.symbol).then(function (ret) {
+                        body.updatedPrice = ret.data.list.resources[0].resource.fields.price;
+                        if (body.updatedPrice < body.bindModel.avgUp && body.bindModel.high > body.bindModel.low) {
+                            alert('High now !');
+                            body.sendNotif('High now ! ');
+                        }
+                        else if (body.updatedPrice > body.bindModel.avgDown && body.bindModel.low > body.bindModel.high) {
+                            alert('Low now !');
+                            body.sendNotif('Low now ! ');
+                        }
+                    });
+                }
+
+            };
+
+           
+
+          /*  body.avg = function (arr) {
+                var sum = 0;
+                angular.forEach(arr, function (item, val) {
+                    sum = sum + item;
+                });
+
+                return sum / arr.length;
+
+            };*/
+
+           
 
 
             body.getEndClass = function (obj) {
@@ -386,96 +513,7 @@
 
             
 
-            body.startAnalysisProcess = function (keyData, startDate, endDate, config) {
-                var high = 0;
-                var equal = 0;
-                var low = 0;
-                var count = 0;
-                var avgUp = 0;
-                var avgDown = 0;
-
-                var myStartDate = startDate;
-                var myEndDate = body.getEndOfDate(myStartDate,config.minutes());
-                var myAllData = [];
-                while (myEndDate <= endDate)
-                {
-                    try
-                    {
-                        if (!keyData[myEndDate].isEnd) {
-                            keyData[myEndDate].isEnd = true;
-                            keyData[myEndDate].myhigh = 0;
-                            keyData[myEndDate].mylow = 0;
-                        }
-
-                       
-
-
-                        if (myAllData.indexOf(keyData[myStartDate])<0)
-                           myAllData.push(keyData[myStartDate]);
-                        if (myAllData.indexOf(keyData[myEndDate]) < 0)
-                            myAllData.push(keyData[myEndDate]);
-
-
-
-                        var diff = keyData[myEndDate].close - keyData[myStartDate].close;
-
-                        if (diff > 0)
-                        {
-                            high = high + 1;
-                            avgUp = avgUp + keyData[myStartDate].close;
-                            keyData[myEndDate].myhigh++;
-                        }
-                        else if (diff == 0)
-                        {
-                            equal = equal + 1;
-                            
-                        }
-                        else
-                        {
-                            low = low + 1;
-                            avgDown = avgDown + keyData[myStartDate].close;
-                            keyData[myEndDate].mylow++;
-                        }
-
-                        count = count + 1;
-
-
-                    
-
-                    }
-                    catch(ex)
-                    {
-                        console.error(ex);
-                        console.log('error at start ' , myStartDate, ' end ' , myEndDate );
-                    }
-                    myStartDate = body.addMinuteToDate(myStartDate, 1);
-                    myEndDate = body.getEndOfDate(myStartDate, config.minutes());
-                }
-
-                if (count > 0) {
-                    avgDown = avgDown / low;
-                    avgUp = avgUp / high;
-                    body.bindModel = {};
-                    body.bindModel.error = null;
-                    body.bindModel.high = (high / count) * 100;
-                    body.bindModel.low = (low / count) * 100;
-                    body.bindModel.equal = (equal / count) * 100;
-                    body.bindModel.startDate = startDate;
-                    body.bindModel.endDate = endDate;
-                    body.bindModel.lastPrice = keyData.last.close;
-                    body.bindModel.firstPrice = keyData[startDate].close;
-                    body.bindModel.avgUp = avgUp;
-                    body.bindModel.avgDown = avgDown;
-
-                    body.bindModel.allData = myAllData;
-                }
-                else
-                {
-                    body.bindModel = {};
-                    body.bindModel.error = 'Not enough data!';
-                }
-
-            };
+            
 
             body.clear = function () {
                 if (body.timer)
@@ -487,7 +525,7 @@
             body.calculateEndDateOfSelection = function () {
                 var minutes = body.config.minutes();
                 if (minutes > 0) {
-                    body.config.endDate = body.getDateWithoutSeconds( body.getEndOfDate(new Date(), minutes));
+                    body.config.endDate = dateService.getDateWithoutSeconds( dateService.getEndOfDate(new Date(), minutes));
                 }
                 else
                 {
