@@ -347,7 +347,7 @@
                 };
 
             })
-            .controller("bodyController", function (myModel, $interval, cordovaCall, dateService, $filter) {
+            .controller("bodyController", function (myModel, $interval, cordovaCall, dateService, $filter, deferSerialService,$q) {
                 var body = this;
                 body.cordovaCall = cordovaCall;
                 body.cordovaCall.callCordova().then(function () {
@@ -383,7 +383,7 @@
 
                 body.testBindModel = function (bindModel) {
                     if (!bindModel.error && (((new Date() - bindModel.startDate) / 1000) <= 60)) {
-                        bindModel.orderedData = $filter('orderBy')(body.bindModel.allData, 'keyDate', true);
+                        bindModel.orderedData = $filter('orderBy')(bindModel.allData, 'keyDate', true);
                         var isLastUp = bindModel.orderedData.length > 2
                         && bindModel.orderedData[0].myhigh > bindModel.orderedData[0].mylow
                         && bindModel.orderedData[1].myhigh > bindModel.orderedData[1].mylow
@@ -423,23 +423,49 @@
                 };
 
                 body.timerBody = function () {
+                    var current = new Date();
+                    if(current.getMinutes() == 14 ||
+                       current.getMinutes() == 29 ||
+                         current.getMinutes() == 44 ||
+                           current.getMinutes() == 59 )
+                    {
 
 
-                    if (body.bindModel) {
-                        var endEndDate = dateService.substractMinuteFromDate(dateService.getEndOfDate(body.bindModel.endDate, body.config.minutes()), 1);
-                        body.model.getLiveData(body.config.symbol).then(function (ret) {
-                            body.updatedPrice = ret.data.list.resources[0].resource.fields.price;
-                            if (body.updatedPrice < body.bindModel.avgUp && body.bindModel.high > body.bindModel.low) {
-                                alert('High now !');
-                                body.sendNotif('High now ! ');
-                            }
-                            else if (body.updatedPrice > body.bindModel.avgDown && body.bindModel.low > body.bindModel.high) {
-                                alert('Low now !');
-                                body.sendNotif('Low now ! ');
-                            }
-                        });
-                    }
+                        body.timerBodyLoop();
 
+
+                        }
+
+                    
+
+                };
+
+                body.timerBodyLoop = function () {
+                    var startDef = deferSerialService.getDefObj(function () {
+                        var def = $q.defer();
+                        def.resolve();
+                        return def.promise;
+                    }, null);
+                    
+                    startDef.invoke();
+                    angular.forEach(body.model.stocks, function (stock, key) {
+                        
+                        var stockDef = deferSerialService.getDefObj(function () {
+                            var def = $q.defer();
+                            //code for one stock;
+                            console.log('start ',stock);
+                            body.model.getOneItemData(stock.stockSymbol, body.config).then(function (bindModel) {
+                                
+                                body.testBindModel(bindModel);
+                                console.log('end ',stock);
+                                def.resolve();
+
+                            });
+                            return def.promise;
+                        }, null);
+                        startDef.then(stockDef);
+                        startDef = stockDef;
+                    });
                 };
 
 
