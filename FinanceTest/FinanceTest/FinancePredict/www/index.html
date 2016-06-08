@@ -98,7 +98,11 @@
                   { stockName: 'EUR/CAD', stockSymbol: 'EURCAD=X' },
                   { stockName: 'GBP/CAD', stockSymbol: 'GBPCAD=X' },
                    { stockName: 'CHF/JPY', stockSymbol: 'CHFJPY=X' },
-
+        { stockName: 'CHF/JPY', stockSymbol: 'USDJPY=X' },
+        { stockName: 'CHF/JPY', stockSymbol: 'USDNOK=X' },
+        { stockName: 'CHF/JPY', stockSymbol: 'AUDUSD=X' },
+        { stockName: 'Gold', stockSymbol: 'GLD' },
+        { stockName: 'Silver', stockSymbol: 'SLV' },
 
             ];
            
@@ -503,10 +507,10 @@
             body.calculateEndDateOfSelection();
 
 
-            body.sendNotif('I am started!');
-            window.setTimeout(function () {
-                body.sendNotif('I am started after 5 minutes!');
-            }, 300000);
+            //body.sendNotif('I am started!');
+            //window.setTimeout(function () {
+            //    body.sendNotif('I am started after 5 minutes!');
+            //}, 300000);
             
 
         });
