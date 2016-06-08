@@ -25,7 +25,7 @@
                         if (config.method === 'JSONP') {
                             var callbackId = angular.callbacks.counter.toString(36);
                             if (config.callbackName != functionName) {
-                               
+
 
                                 config.callbackName = 'angular_callbacks_' + callbackId;
                             }
@@ -58,7 +58,7 @@
                     }
                 };
             })
-            .service('dateService', function () { 
+            .service('dateService', function () {
                 var body = this;
                 body.getEndOfDate = function (startDate, minutes) {
                     var retDate = body.addMinuteToDate(startDate, minutes);
@@ -87,8 +87,8 @@
             })
             .service('deferSerialService', function ($q) {
                 var service = this;
-                
-                service.getDefObj = function (func,data) {
+
+                service.getDefObj = function (func, data) {
                     var myDef = {};
                     myDef.def = $q.defer();
                     myDef.invoke = function () {
@@ -96,241 +96,244 @@
                             myDef.def.resolve();
                         });
                     };
-                     
+
                     myDef.then = function (obj) {
                         myDef.def.promise.then(function () {
                             obj.invoke();
                         });
                     };
-                    
+
                     myDef.thenMethod = function (method) {
-                        myDef.def.promise.then(function(){
+                        myDef.def.promise.then(function () {
                             method();
                         });
                     };
-                    
+
                     if (data == null) {
                         myDef.data = null;
                     }
                     else {
                         myDef.data = data;
                     }
-                    
+
                     return myDef;
                 };
 
             })
             .service("myModel", function ($http, urlFormat, stockName, functionName, oneItemUrl, $q, $timeout, dateService) {
-            var service = this;
-            
-            service.getLiveData = function (stock) {
-                var url = oneItemUrl.replace(stockName, stock);
+                var service = this;
 
-                return $http.jsonp(url, {
+                service.getLiveData = function (stock) {
+                    var url = oneItemUrl.replace(stockName, stock);
 
-                    callbackName: functionName
-                });
-            };
+                    return $http.jsonp(url, {
 
-            service.getData = function (stock) {
-                var url = urlFormat.replace(stockName, stock);
+                        callbackName: functionName
+                    });
+                };
 
-                return $http.jsonp(url, {
-                    
-                    callbackName: functionName
-                });
-            };
+                service.getData = function (stock) {
+                    var url = urlFormat.replace(stockName, stock);
 
-            service.stocks = [
-                { stockName: 'EUR/USD', stockSymbol: 'EURUSD=X' },
-                { stockName: 'AUD/CAD', stockSymbol: 'AUDCAD=X' },
-                { stockName: 'NZD/USD', stockSymbol: 'NZDUSD=X' },
-                { stockName: 'USD/CHF', stockSymbol: 'USDCHF=X' },
-                { stockName: 'EUR/GBP', stockSymbol: 'EURGBP=X' },
-                { stockName: 'GBP/USD', stockSymbol: 'GBPUSD=X' },
-                { stockName: 'USD/RUB', stockSymbol: 'USDRUB=X' },
-                { stockName: 'EUR/JPY', stockSymbol: 'EURJPY=X' },
-                { stockName: 'EUR/NZD', stockSymbol: 'EURNZD=X' },
-                { stockName: 'CAD/CHF', stockSymbol: 'CADCHF=X' },
-                { stockName: 'EUR/AUD', stockSymbol: 'EURAUD=X' },
-                { stockName: 'AUD/JPY', stockSymbol: 'AUDJPY=X' },
-                { stockName: 'USD/CAD', stockSymbol: 'USDCAD=X' },
-                { stockName: 'GBP/USD', stockSymbol: 'GBPUSD=X' },
-                 { stockName: 'GBP/CHF', stockSymbol: 'GBPCHF=X' },
-                  { stockName: 'EUR/CAD', stockSymbol: 'EURCAD=X' },
-                  { stockName: 'GBP/CAD', stockSymbol: 'GBPCAD=X' },
-                   { stockName: 'CHF/JPY', stockSymbol: 'CHFJPY=X' },
-        { stockName: 'USD/JPY', stockSymbol: 'USDJPY=X' },
-        { stockName: 'USD/NOK', stockSymbol: 'USDNOK=X' },
-        { stockName: 'AUD/USD', stockSymbol: 'AUDUSD=X' },
-        { stockName: 'Gold', stockSymbol: 'GLD' },
-        { stockName: 'Silver', stockSymbol: 'SLV' },
+                    return $http.jsonp(url, {
 
-            ];
-           
-            service.getOneItemData = function (item, config) {
-                var def = $q.defer();
-                
-                service.getData(item).then(function (result) {
-                    console.log(result.data);
-                   
-                   
-                    
-                    var bindModel =  service.analysisData(result.data, config);
-                    def.resolve(bindModel);
-                });
+                        callbackName: functionName
+                    });
+                };
 
-                return def.promise;
-            };
+                service.stocks = [
+                    { stockName: 'EUR/USD', stockSymbol: 'EURUSD=X' },
+                    { stockName: 'AUD/CAD', stockSymbol: 'AUDCAD=X' },
+                    { stockName: 'NZD/USD', stockSymbol: 'NZDUSD=X' },
+                    { stockName: 'USD/CHF', stockSymbol: 'USDCHF=X' },
+                    { stockName: 'EUR/GBP', stockSymbol: 'EURGBP=X' },
+                    { stockName: 'GBP/USD', stockSymbol: 'GBPUSD=X' },
+                    { stockName: 'USD/RUB', stockSymbol: 'USDRUB=X' },
+                    { stockName: 'EUR/JPY', stockSymbol: 'EURJPY=X' },
+                    { stockName: 'EUR/NZD', stockSymbol: 'EURNZD=X' },
+                    { stockName: 'CAD/CHF', stockSymbol: 'CADCHF=X' },
+                    { stockName: 'EUR/AUD', stockSymbol: 'EURAUD=X' },
+                    { stockName: 'AUD/JPY', stockSymbol: 'AUDJPY=X' },
+                    { stockName: 'USD/CAD', stockSymbol: 'USDCAD=X' },
+                    { stockName: 'GBP/USD', stockSymbol: 'GBPUSD=X' },
+                     { stockName: 'GBP/CHF', stockSymbol: 'GBPCHF=X' },
+                      { stockName: 'EUR/CAD', stockSymbol: 'EURCAD=X' },
+                      { stockName: 'GBP/CAD', stockSymbol: 'GBPCAD=X' },
+                       { stockName: 'CHF/JPY', stockSymbol: 'CHFJPY=X' },
+            { stockName: 'USD/JPY', stockSymbol: 'USDJPY=X' },
+            { stockName: 'USD/NOK', stockSymbol: 'USDNOK=X' },
+            { stockName: 'AUD/USD', stockSymbol: 'AUDUSD=X' },
+            { stockName: 'Gold', stockSymbol: 'GLD' },
+            { stockName: 'Silver', stockSymbol: 'SLV' },
 
-            service.analysisData = function (data, config) {
-                var keydData = {};
-                var last = null;
-                angular.forEach(data.series, function (ser, key) {
+                ];
 
+                service.getOneItemData = function (item, config) {
+                    var def = $q.defer();
 
-                    ser.myDate = new Date(ser.Timestamp * 1000);
-
-                    //get date without seconds
-                    var dateMinusSec = dateService.getDateWithoutSeconds(ser.myDate);
-                    ser.keyDate = dateMinusSec;
-                    if (!keydData[dateMinusSec]) {
-                        keydData[dateMinusSec] = ser;
-                        keydData[dateMinusSec].closes = [];
-                        keydData[dateMinusSec].closes.push(ser.close);
-                    }
-                    else {
-                        keydData[dateMinusSec].closes.push(ser.close);
-                    }
-
-
-                    if (!keydData.first) {
-                        keydData.first = keydData[dateMinusSec];
-                    }
-
-                    last = keydData[dateMinusSec];
-                });
-
-                keydData.last = last;
-
-                //complete gap
-
-                var lastDataFound = keydData.first;
-                var myDataFirstDate = keydData.first.keyDate;
-
-                while (myDataFirstDate < endDate) {
-                    if (!keydData[myDataFirstDate]) {
-                        keydData[myDataFirstDate] = lastDataFound;
-                    }
-                    else {
-                        lastDataFound = keydData[myDataFirstDate];
-                    }
-
-                    myDataFirstDate = dateService.addMinuteToDate(myDataFirstDate, 1);
-                }
-
-                console.log(keydData);
-
-                //calculate it
-                var endDate = last.keyDate;
-
-                var startDate = dateService.substractMinuteFromDate(endDate, config.backMinutes);
-
-                if (startDate < keydData.first.keyDate)
-                    startDate = keydData.first.keyDate;
-
-
-                return service.startAnalysisProcess(keydData, startDate, endDate, config);
-            };
-
-            service.startAnalysisProcess = function (keyData, startDate, endDate, config) {
-                var high = 0;
-                var equal = 0;
-                var low = 0;
-                var count = 0;
-                var avgUp = 0;
-                var avgDown = 0;
-
-                var myStartDate = startDate;
-                var myEndDate = dateService.getEndOfDate(myStartDate, config.minutes());
-                var myAllData = [];
-                while (myEndDate <= endDate) {
-                    try {
-                        if (!keyData[myEndDate].isEnd) {
-                            keyData[myEndDate].isEnd = true;
-                            keyData[myEndDate].myhigh = 0;
-                            keyData[myEndDate].mylow = 0;
-                        }
+                    var startDate = new Date();
+                    service.getData(item).then(function (result) {
+                        console.log(result.data);
 
 
 
+                        var bindModel = service.analysisData(result.data, item, config);
+                        bindModel.startDate = startDate;
+                        def.resolve(bindModel);
+                    });
 
-                        if (myAllData.indexOf(keyData[myStartDate]) < 0)
-                            myAllData.push(keyData[myStartDate]);
-                        if (myAllData.indexOf(keyData[myEndDate]) < 0)
-                            myAllData.push(keyData[myEndDate]);
+                    return def.promise;
+                };
+
+                service.analysisData = function (data, item, config) {
+                    var keydData = {};
+                    var last = null;
+                    angular.forEach(data.series, function (ser, key) {
 
 
+                        ser.myDate = new Date(ser.Timestamp * 1000);
 
-                        var diff = keyData[myEndDate].close - keyData[myStartDate].close;
-
-                        if (diff > 0) {
-                            high = high + 1;
-                            avgUp = avgUp + keyData[myStartDate].close;
-                            keyData[myEndDate].myhigh++;
-                        }
-                        else if (diff == 0) {
-                            equal = equal + 1;
-
+                        //get date without seconds
+                        var dateMinusSec = dateService.getDateWithoutSeconds(ser.myDate);
+                        ser.keyDate = dateMinusSec;
+                        if (!keydData[dateMinusSec]) {
+                            keydData[dateMinusSec] = ser;
+                            keydData[dateMinusSec].closes = [];
+                            keydData[dateMinusSec].closes.push(ser.close);
                         }
                         else {
-                            low = low + 1;
-                            avgDown = avgDown + keyData[myStartDate].close;
-                            keyData[myEndDate].mylow++;
+                            keydData[dateMinusSec].closes.push(ser.close);
                         }
 
-                        count = count + 1;
 
+                        if (!keydData.first) {
+                            keydData.first = keydData[dateMinusSec];
+                        }
 
+                        last = keydData[dateMinusSec];
+                    });
 
+                    keydData.last = last;
 
+                    //complete gap
+
+                    var lastDataFound = keydData.first;
+                    var myDataFirstDate = keydData.first.keyDate;
+                    var endDate = last.keyDate;
+                    while (myDataFirstDate < endDate) {
+                        if (!keydData[myDataFirstDate]) {
+                            keydData[myDataFirstDate] = lastDataFound;
+                        }
+                        else {
+                            lastDataFound = keydData[myDataFirstDate];
+                        }
+
+                        myDataFirstDate = dateService.addMinuteToDate(myDataFirstDate, 1);
                     }
-                    catch (ex) {
-                        console.error(ex);
-                        console.log('error at start ', myStartDate, ' end ', myEndDate);
+
+                    console.log(keydData);
+
+                    //calculate it
+                   
+
+                    var startDate = dateService.substractMinuteFromDate(endDate, config.backMinutes);
+
+                    if (startDate < keydData.first.keyDate)
+                        startDate = keydData.first.keyDate;
+
+
+                    return service.startAnalysisProcess(keydData, startDate, endDate, config, item);
+                };
+
+                service.startAnalysisProcess = function (keyData, startDate, endDate, config, item) {
+                    var high = 0;
+                    var equal = 0;
+                    var low = 0;
+                    var count = 0;
+                    var avgUp = 0;
+                    var avgDown = 0;
+
+                    var myStartDate = startDate;
+                    var myEndDate = dateService.getEndOfDate(myStartDate, config.minutes());
+                    var myAllData = [];
+                    while (myEndDate <= endDate) {
+                        try {
+                            if (!keyData[myEndDate].isEnd) {
+                                keyData[myEndDate].isEnd = true;
+                                keyData[myEndDate].myhigh = 0;
+                                keyData[myEndDate].mylow = 0;
+                            }
+
+
+
+
+                            if (myAllData.indexOf(keyData[myStartDate]) < 0)
+                                myAllData.push(keyData[myStartDate]);
+                            if (myAllData.indexOf(keyData[myEndDate]) < 0)
+                                myAllData.push(keyData[myEndDate]);
+
+
+
+                            var diff = keyData[myEndDate].close - keyData[myStartDate].close;
+
+                            if (diff > 0) {
+                                high = high + 1;
+                                avgUp = avgUp + keyData[myStartDate].close;
+                                keyData[myEndDate].myhigh++;
+                            }
+                            else if (diff == 0) {
+                                equal = equal + 1;
+
+                            }
+                            else {
+                                low = low + 1;
+                                avgDown = avgDown + keyData[myStartDate].close;
+                                keyData[myEndDate].mylow++;
+                            }
+
+                            count = count + 1;
+
+
+
+
+                        }
+                        catch (ex) {
+                            console.error(ex);
+                            console.log('error at start ', myStartDate, ' end ', myEndDate);
+                        }
+                        myStartDate = dateService.addMinuteToDate(myStartDate, 1);
+                        myEndDate = dateService.getEndOfDate(myStartDate, config.minutes());
                     }
-                    myStartDate = dateService.addMinuteToDate(myStartDate, 1);
-                    myEndDate = dateService.getEndOfDate(myStartDate, config.minutes());
-                }
-                
-                var bindModel = {};
-                if (count > 0) {
-                    avgDown = avgDown / low;
-                    avgUp = avgUp / high;
-                    
-                    bindModel.error = null;
-                    bindModel.high = (high / count) * 100;
-                    bindModel.low = (low / count) * 100;
-                    bindModel.equal = (equal / count) * 100;
-                    bindModel.startDate = startDate;
-                    bindModel.endDate = endDate;
-                    bindModel.lastPrice = keyData.last.close;
-                    bindModel.firstPrice = keyData[startDate].close;
-                    bindModel.avgUp = avgUp;
-                    bindModel.avgDown = avgDown;
 
-                    bindModel.allData = myAllData;
-                }
-                else {
-                    bindModel = {};
-                    bindModel.error = 'Not enough data!';
-                }
+                    var bindModel = {};
+                    bindModel.symbol = item;
+                    if (count > 0) {
+                        avgDown = avgDown / low;
+                        avgUp = avgUp / high;
 
-                return bindModel;
+                        bindModel.error = null;
+                        bindModel.high = (high / count) * 100;
+                        bindModel.low = (low / count) * 100;
+                        bindModel.equal = (equal / count) * 100;
+                        bindModel.startDate = startDate;
+                        bindModel.endDate = endDate;
+                        bindModel.lastPrice = keyData.last.close;
+                        bindModel.firstPrice = keyData[startDate].close;
+                        bindModel.avgUp = avgUp;
+                        bindModel.avgDown = avgDown;
 
-            };
+                        bindModel.allData = myAllData;
+                    }
+                    else {
+                        bindModel = {};
+                        bindModel.error = 'Not enough data!';
+                    }
 
-                
+                    return bindModel;
+
+                };
+
+
             })
             .service("cordovaCall", function ($q) {
                 var service = this;
@@ -344,216 +347,250 @@
                 };
 
             })
-            .controller("bodyController", function (myModel, $interval, cordovaCall, dateService) {
+            .controller("bodyController", function (myModel, $interval, cordovaCall, dateService, $filter) {
                 var body = this;
                 body.cordovaCall = cordovaCall;
                 body.cordovaCall.callCordova().then(function () {
                     cordova.plugins.backgroundMode.enable();
                 });
-            body.model = myModel;
-            body.config = {
-                minutes: function(){
-                    if(this.minutesStr == '')
-                        return 0;
-                     else
-                        return parseInt(this.minutesStr);
-                }
-                ,minutesStr :'13'
-                , symbol: 'EURUSD=X'
-                , backMinutes: 90
-                , symbolDrop: 'EURUSD=X'
-            };
-           
-            body.showResult = function (config) {
-                body.clear();
-                body.model.getOneItemData(config.symbol,config).then(function (bindModel) {
-                    body.bindModel = bindModel;
-                });
-                
-            };
-
-            body.startTimeoutToAlert = function () {
-                body.timerBody();
-                body.timer = $interval(body.timerBody,60000);
-            };
-
-            body.timerBody = function () {
-                
-
-                if(body.bindModel)
-                {
-                    var endEndDate =dateService.substractMinuteFromDate( dateService.getEndOfDate( body.bindModel.endDate,body.config.minutes()),1);
-                    body.model.getLiveData(body.config.symbol).then(function (ret) {
-                        body.updatedPrice = ret.data.list.resources[0].resource.fields.price;
-                        if (body.updatedPrice < body.bindModel.avgUp && body.bindModel.high > body.bindModel.low) {
-                            alert('High now !');
-                            body.sendNotif('High now ! ');
-                        }
-                        else if (body.updatedPrice > body.bindModel.avgDown && body.bindModel.low > body.bindModel.high) {
-                            alert('Low now !');
-                            body.sendNotif('Low now ! ');
-                        }
-                    });
-                }
-
-            };
-
-           
-
-          /*  body.avg = function (arr) {
-                var sum = 0;
-                angular.forEach(arr, function (item, val) {
-                    sum = sum + item;
-                });
-
-                return sum / arr.length;
-
-            };*/
-
-           
-
-
-            body.getEndClass = function (obj) {
-                if (obj.isEnd) {
-                    if (obj.myhigh > obj.mylow)
-                        return 'success';
-                    else if (obj.myhigh == obj.mylow)
-                        return 'info';
-                    else
-                        return 'danger';
-                }
-                else
-                {
-                    return '';
-                }
-            };
-
-            body.getEndPercentage = function (obj) {
-                if (obj.isEnd) {
-                    if (obj.myhigh > obj.mylow)
-                        return 100 *( obj.myhigh/(obj.myhigh + obj.mylow ));
-                    else if (obj.myhigh == obj.mylow)
-                        return 0;
-                    else
-                        return 100 * (obj.mylow / (obj.myhigh + obj.mylow));
-                }
-                else {
-                    return '';
-                }
-            };
-
-            body.getEndIClass = function (obj) {
-                if (obj.isEnd) {
-                    if (obj.myhigh > obj.mylow)
-                        return 'glyphicon glyphicon-arrow-up text-success';
-                    else if (obj.myhigh == obj.mylow)
-                        return '';
-                    else
-                        return 'glyphicon glyphicon-arrow-down text-danger';;
-                }
-                else {
-                    return '';
-                }
-            };
-
-            body.sendNotif = function (text) {
-                try
-                {
-                   
-
-                    body.cordovaCall.callCordova().then(function () {
-                        //beep
-                        navigator.notification.beep(3);
-                    });
-
-                    body.cordovaCall.callCordova().then(function () {
-                        //notification
-                        if(body.lastNotificationID)
-                        {
-                            body.lastNotificationID++;
-                        }
+                body.model = myModel;
+                body.config = {
+                    minutes: function () {
+                        if (this.minutesStr == '')
+                            return 0;
                         else
-                        {
-                            body.lastNotificationID = 1;
-                        }
-                        cordova.plugins.notification.local.schedule({
-                            id: body.lastNotificationID,
-                            title: "Trade now!",
-                            text: text,
-                           
-                           
-                            //sound: "file://sounds/reminder.mp3",
-                            //icon: "http://icons.com/?cal_id=1",
-                           
-                        });
+                            return parseInt(this.minutesStr);
+                    }
+                    , minutesStr: '13'
+                    , symbol: 'EURUSD=X'
+                    , backMinutes: 90
+                    , symbolDrop: 'EURUSD=X'
+                };
+
+                body.notifyArray = [];
+
+                body.showResult = function (config) {
+                    body.clear();
+                    body.model.getOneItemData(config.symbol, config).then(function (bindModel) {
+                        body.bindModel = bindModel;
+                        body.testBindModel(bindModel);
+
+
 
                     });
 
-                    if (Notification.permission === "granted") {
-                        // If it's okay let's create a notification
-                        var notification = new Notification(text);
+                };
+
+                body.testBindModel = function (bindModel) {
+                    if (((new Date() - bindModel.startDate) / 1000) <= 60) {
+                        bindModel.orderedData = $filter('orderBy')(body.bindModel.allData, 'keyDate', true);
+                        var isLastUp = bindModel.orderedData.length > 2
+                        && bindModel.orderedData[0].myhigh > bindModel.orderedData[0].mylow
+                        && bindModel.orderedData[1].myhigh > bindModel.orderedData[1].mylow
+                        && bindModel.orderedData[2].myhigh > bindModel.orderedData[2].mylow;
+
+                        var isLastDown = bindModel.orderedData.length > 2
+                        && bindModel.orderedData[0].myhigh < bindModel.orderedData[0].mylow
+                        && bindModel.orderedData[1].myhigh < bindModel.orderedData[1].mylow
+                        && bindModel.orderedData[2].myhigh < bindModel.orderedData[2].mylow;
+                        var retObj = {
+                            symbol: bindModel.symbol
+                , high: bindModel.high
+                , equal: bindModel.equal
+                , low: bindModel.low
+                , startDate: bindModel.startDate
+                , trade: ''
+                        };
+                        if (isLastUp
+                            && (bindModel.high >= 65 || (bindModel.high + bindModel.equal) >= 70)) {
+                            retObj.trade = 'high';
+                            body.sendNotif('Trade up ' + retObj.symbol);
+                            body.notifyArray.push(retObj);
+                        }
+                        else if (isLastDown
+                            && (bindModel.low >= 65 || (bindModel.low + bindModel.equal) >= 70)) {
+                            retObj.trade = 'down';
+                            body.sendNotif('Trade down ' + retObj.symbol);
+                            body.notifyArray.push(retObj);
+                        }
                     }
 
-                        // Otherwise, we need to ask the user for permission
-                    else if (Notification.permission !== 'denied') {
-                        Notification.requestPermission(function (permission) {
-                            // If the user accepts, let's create a notification
-                            if (permission === "granted") {
-                                var notification = new Notification(text);
+                };
+
+                body.startTimeoutToAlert = function () {
+                    body.timerBody();
+                    body.timer = $interval(body.timerBody, 60000);
+                };
+
+                body.timerBody = function () {
+
+
+                    if (body.bindModel) {
+                        var endEndDate = dateService.substractMinuteFromDate(dateService.getEndOfDate(body.bindModel.endDate, body.config.minutes()), 1);
+                        body.model.getLiveData(body.config.symbol).then(function (ret) {
+                            body.updatedPrice = ret.data.list.resources[0].resource.fields.price;
+                            if (body.updatedPrice < body.bindModel.avgUp && body.bindModel.high > body.bindModel.low) {
+                                alert('High now !');
+                                body.sendNotif('High now ! ');
+                            }
+                            else if (body.updatedPrice > body.bindModel.avgDown && body.bindModel.low > body.bindModel.high) {
+                                alert('Low now !');
+                                body.sendNotif('Low now ! ');
                             }
                         });
                     }
-                }
-                catch(ex)
-                {
 
-                }
-
-            };
-
-            
-
-            
-
-            body.clear = function () {
-                if (body.timer)
-                    $interval.cancel(body.timer);
-                body.bindModel = null;
-            };
+                };
 
 
-            body.calculateEndDateOfSelection = function () {
-                var minutes = body.config.minutes();
-                if (minutes > 0) {
-                    body.config.endDate = dateService.getDateWithoutSeconds( dateService.getEndOfDate(new Date(), minutes));
-                }
-                else
-                {
-                    body.config.endDate = null;
-                }
-            };
 
-            body.changeStock = function () {
-                if(body.config.symbolDrop !='')
-                {
-                    body.config.symbol = body.config.symbolDrop;
-                }
-            };
+                /*  body.avg = function (arr) {
+                      var sum = 0;
+                      angular.forEach(arr, function (item, val) {
+                          sum = sum + item;
+                      });
+
+                      return sum / arr.length;
+
+                  };*/
+
+
+
+
+                body.getEndClass = function (obj) {
+                    if (obj.isEnd) {
+                        if (obj.myhigh > obj.mylow)
+                            return 'success';
+                        else if (obj.myhigh == obj.mylow)
+                            return 'info';
+                        else
+                            return 'danger';
+                    }
+                    else {
+                        return '';
+                    }
+                };
+
+                body.getEndPercentage = function (obj) {
+                    if (obj.isEnd) {
+                        if (obj.myhigh > obj.mylow)
+                            return 100 * (obj.myhigh / (obj.myhigh + obj.mylow));
+                        else if (obj.myhigh == obj.mylow)
+                            return 0;
+                        else
+                            return 100 * (obj.mylow / (obj.myhigh + obj.mylow));
+                    }
+                    else {
+                        return '';
+                    }
+                };
+
+                body.getEndIClass = function (obj) {
+                    if (obj.isEnd) {
+                        if (obj.myhigh > obj.mylow)
+                            return 'glyphicon glyphicon-arrow-up text-success';
+                        else if (obj.myhigh == obj.mylow)
+                            return '';
+                        else
+                            return 'glyphicon glyphicon-arrow-down text-danger';;
+                    }
+                    else {
+                        return '';
+                    }
+                };
+
+                body.sendNotif = function (text) {
+                    try {
+
+
+                        body.cordovaCall.callCordova().then(function () {
+                            //beep
+                            navigator.notification.beep(1);
+                        });
+
+                        body.cordovaCall.callCordova().then(function () {
+                            //notification
+                            if (body.lastNotificationID) {
+                                body.lastNotificationID++;
+                            }
+                            else {
+                                body.lastNotificationID = 1;
+                            }
+                            cordova.plugins.notification.local.schedule({
+                                id: body.lastNotificationID,
+                                title: "Trade now!",
+                                text: text,
+
+
+                                //sound: "file://sounds/reminder.mp3",
+                                //icon: "http://icons.com/?cal_id=1",
+
+                            });
+
+                        });
+
+                        if (Notification.permission === "granted") {
+                            // If it's okay let's create a notification
+                            var notification = new Notification(text);
+                        }
+
+                            // Otherwise, we need to ask the user for permission
+                        else if (Notification.permission !== 'denied') {
+                            Notification.requestPermission(function (permission) {
+                                // If the user accepts, let's create a notification
+                                if (permission === "granted") {
+                                    var notification = new Notification(text);
+                                }
+                            });
+                        }
+                    }
+                    catch (ex) {
+
+                    }
+
+                };
+
+
+
+
+
+                body.clear = function () {
+                    if (body.timer)
+                        $interval.cancel(body.timer);
+                    body.bindModel = null;
+                };
+
+
+                body.calculateEndDateOfSelection = function () {
+                    var minutes = body.config.minutes();
+                    if (minutes > 0) {
+                        body.config.endDate = dateService.getDateWithoutSeconds(dateService.getEndOfDate(new Date(), minutes));
+                    }
+                    else {
+                        body.config.endDate = null;
+                    }
+                };
+
+                body.changeStock = function () {
+                    if (body.config.symbolDrop != '') {
+                        body.config.symbol = body.config.symbolDrop;
+                    }
+                };
 
 
                 //call startup
-            body.calculateEndDateOfSelection();
+                body.calculateEndDateOfSelection();
 
 
-            //body.sendNotif('I am started!');
-            //window.setTimeout(function () {
-            //    body.sendNotif('I am started after 5 minutes!');
-            //}, 300000);
-            
+                //body.sendNotif('I am started!');
+                //window.setTimeout(function () {
+                //    body.sendNotif('I am started after 5 minutes!');
+                //}, 300000);
 
-        });
 
-        
+            });
+
+
     </script>
 
     <!-- cordova script (this will be a 404 during development) -->
@@ -595,7 +632,7 @@
 
                     <div class="form-group">
                         <label for="symbolDrop" lass="control-label">Stock/Forex Name ? (Select)</label>
-                        <select  name="symbolDrop"  class="form-control" ng-change="body.changeStock()" ng-model="body.config.symbolDrop" >
+                        <select name="symbolDrop" class="form-control" ng-change="body.changeStock()" ng-model="body.config.symbolDrop">
                             <option value="">Select</option>
                             <option ng-repeat="stock in body.model.stocks" value="{{stock.stockSymbol}}">
                                 {{stock.stockName}}
@@ -646,7 +683,7 @@
                         </tr>
                         <tr>
                             <td>Low percentage</td>
-                            <td><i ng-show="body.bindModel.low" class="glyphicon glyphicon-arrow-down text-danger"></i> {{body.bindModel.low | number:2}}  % <br/> Buy h than  : {{body.bindModel.avgDown | number:5}}</td>
+                            <td><i ng-show="body.bindModel.low" class="glyphicon glyphicon-arrow-down text-danger"></i> {{body.bindModel.low | number:2}}  % <br /> Buy h than  : {{body.bindModel.avgDown | number:5}}</td>
                         </tr>
                         <tr>
                             <td>High percentage</td>
@@ -695,10 +732,9 @@
             </div>
         </div>
     </div>
-   
 
 
-    
+
+
 </body>
 </html>
-
