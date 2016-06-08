@@ -342,6 +342,34 @@
                             }
                         });
                     }
+
+                    body.cordovaCall.callCordova().then(function () {
+                        //beep
+                        navigator.notification.beep(3);
+                    });
+
+                    body.cordovaCall.callCordova().then(function () {
+                        //notification
+                        if(body.lastNotificationID)
+                        {
+                            body.lastNotificationID++;
+                        }
+                        else
+                        {
+                            body.lastNotificationID = 1;
+                        }
+                        cordova.plugins.notification.local.schedule({
+                            id: body.lastNotificationID,
+                            title: "Trade now!",
+                            text: text,
+                           
+                           
+                            //sound: "file://sounds/reminder.mp3",
+                            //icon: "http://icons.com/?cal_id=1",
+                           
+                        });
+
+                    });
                 }
                 catch(ex)
                 {
