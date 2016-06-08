@@ -382,7 +382,7 @@
                 };
 
                 body.testBindModel = function (bindModel) {
-                    if (((new Date() - bindModel.startDate) / 1000) <= 60) {
+                    if (!bindModel.error && (((new Date() - bindModel.startDate) / 1000) <= 60)) {
                         bindModel.orderedData = $filter('orderBy')(body.bindModel.allData, 'keyDate', true);
                         var isLastUp = bindModel.orderedData.length > 2
                         && bindModel.orderedData[0].myhigh > bindModel.orderedData[0].mylow
@@ -558,6 +558,7 @@
                     if (body.timer)
                         $interval.cancel(body.timer);
                     body.bindModel = null;
+                    body.notifyArray = [];
                 };
 
 
@@ -652,8 +653,28 @@
                         <button class="btn btn-danger" ng-click="body.clear()">Clear Results</button>
                     </div>
                 </form>
+
+                <div ng-show="body.notifyArray.length > 0">
+                    <ul>
+                        <li ng-repeat="item in body.notifyArray | orderBy:'startDate':true">
+                            Name : {{item.symbol}}<br />
+                            Date : {{item.startDate}}<br />
+                            High : {{item.high | number:5}} %<br />
+                            Equal : {{item.equal | number:5}} %<br />
+                            Low : {{item.low | number:5}} %<br />
+                            Trade : {{item.trade}}<br />
+                        </li>
+                    </ul>
+                </div>
+
+
                 <div ng-show="body.bindModel && !body.bindModel.error">
+                    
+                    
+                    
                     <hr ng-show="body.bindModel" />
+                    
+
 
                     <h3 ng-show="body.bindModel">Result :</h3>
                     <table ng-show="body.bindModel">
