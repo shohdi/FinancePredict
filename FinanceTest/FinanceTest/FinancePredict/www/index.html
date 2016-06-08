@@ -104,9 +104,25 @@
            
 
 
-            }).controller("bodyController", function (myModel,$interval) {
-                var body = this;
+            })
+            .service("cordovaCall", function ($q) {
+                var service = this;
 
+                service.callCordova = function () {
+                    var deferred = $q.defer();
+                    document.addEventListener('deviceready', function () {
+                        deferred.resolve();
+                    }, false);
+                    return deferred.promise;
+                };
+
+            })
+            .controller("bodyController", function (myModel, $interval, cordovaCall) {
+                var body = this;
+                body.cordovaCall = cordovaCall;
+                body.cordovaCall.callCordova().then(function () {
+                    cordova.plugins.backgroundMode.enable();
+                });
             body.model = myModel;
             body.config = {
                 minutes: function(){
