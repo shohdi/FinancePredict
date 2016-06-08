@@ -328,20 +328,7 @@
             body.sendNotif = function (text) {
                 try
                 {
-                    if (Notification.permission === "granted") {
-                        // If it's okay let's create a notification
-                        var notification = new Notification(text);
-                    }
-
-                        // Otherwise, we need to ask the user for permission
-                    else if (Notification.permission !== 'denied') {
-                        Notification.requestPermission(function (permission) {
-                            // If the user accepts, let's create a notification
-                            if (permission === "granted") {
-                                var notification = new Notification(text);
-                            }
-                        });
-                    }
+                   
 
                     body.cordovaCall.callCordova().then(function () {
                         //beep
@@ -370,6 +357,21 @@
                         });
 
                     });
+
+                    if (Notification.permission === "granted") {
+                        // If it's okay let's create a notification
+                        var notification = new Notification(text);
+                    }
+
+                        // Otherwise, we need to ask the user for permission
+                    else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission(function (permission) {
+                            // If the user accepts, let's create a notification
+                            if (permission === "granted") {
+                                var notification = new Notification(text);
+                            }
+                        });
+                    }
                 }
                 catch(ex)
                 {
@@ -499,7 +501,13 @@
 
                 //call startup
             body.calculateEndDateOfSelection();
+
+
             body.sendNotif('I am started!');
+            window.setTimeout(function () {
+                body.sendNotif('I am started after 5 minutes!');
+            }, 300000);
+            
 
         });
 
