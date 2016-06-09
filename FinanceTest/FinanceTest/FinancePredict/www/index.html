@@ -315,7 +315,7 @@
                         else
                             return parseInt(this.minutesStr);
                     }
-                    , minutesStr: '13'
+                    , minutesStr: '15'
                     , symbol: 'EURUSD=X'
                     , backMinutes: 90
                     , symbolDrop: 'EURUSD=X'
@@ -338,15 +338,21 @@
                 body.testBindModel = function (bindModel) {
                     if (!bindModel.error && (((new Date() - bindModel.startDate) / 1000) <= 60)) {
                         bindModel.orderedData = $filter('orderBy')(bindModel.allData, 'keyDate', true);
-                        var isLastUp = bindModel.orderedData.length > 2
-                        && bindModel.orderedData[0].myhigh > bindModel.orderedData[0].mylow
-                        && bindModel.orderedData[1].myhigh > bindModel.orderedData[1].mylow
-                        && bindModel.orderedData[2].myhigh > bindModel.orderedData[2].mylow;
+                        var isLastUp = bindModel.orderedData.length > 4;
+                        if (isLastUp) {
+                            for (var i = 0; i < 5; i++) {
+                                isLastUp = isLastUp && bindModel.orderedData[i].myhigh > bindModel.orderedData[i].mylow
+                            }
+                        }
 
-                        var isLastDown = bindModel.orderedData.length > 2
-                        && bindModel.orderedData[0].myhigh < bindModel.orderedData[0].mylow
-                        && bindModel.orderedData[1].myhigh < bindModel.orderedData[1].mylow
-                        && bindModel.orderedData[2].myhigh < bindModel.orderedData[2].mylow;
+                        var isLastDown = bindModel.orderedData.length > 4;
+                        if (isLastDown) {
+                            for (var i = 0; i < 5; i++) {
+                                isLastDown = isLastDown && bindModel.orderedData[i].myhigh < bindModel.orderedData[i].mylow
+                            }
+                        }
+
+
                         var retObj = {
                             symbol: bindModel.symbol
                 , high: bindModel.high
@@ -355,16 +361,21 @@
                 , startDate: bindModel.startDate
                 , trade: ''
                         };
+
+
+
                         if (isLastUp
-                            && (bindModel.high >= 65 || (bindModel.high + bindModel.equal) >= 70)) {
+                            && (bindModel.high >= 65)) {
                             retObj.trade = 'high';
                             body.sendNotif('Trade up ' + retObj.symbol);
+                            retObj.number = retObj.high + retObj.equal;
                             body.notifyArray.push(retObj);
                         }
                         else if (isLastDown
-                            && (bindModel.low >= 65 || (bindModel.low + bindModel.equal) >= 70)) {
+                            && (bindModel.low >= 65)) {
                             retObj.trade = 'down';
                             body.sendNotif('Trade down ' + retObj.symbol);
+                            retObj.number = retObj.low + retObj.equal;
                             body.notifyArray.push(retObj);
                         }
                     }
@@ -372,18 +383,23 @@
                 };
 
                 body.startTimeoutToAlert = function () {
+
                     body.timerBody();
                     body.timer = $interval(body.timerBody, 60000);
+                };
+
+                body.calcAll = function () {
+                    body.notifyArray = [];
+
+                    body.timerBodyLoop();
                 };
 
                 body.timerBody = function () {
                     var current = new Date();
                     console.log(current);
-                    if (current.getMinutes() == 14 ||
-                       current.getMinutes() == 29 ||
-                         current.getMinutes() == 44 ||
-                           current.getMinutes() == 59) {
+                    if ((current.getMinutes() % 5) == 0) {
 
+                        body.notifyArray = [];
 
                         body.timerBodyLoop();
 
@@ -486,6 +502,7 @@
                         body.cordovaCall.callCordova().then(function () {
                             //beep
                             navigator.notification.beep(1);
+                            navigator.vibrate(1000);
                         });
 
                         body.cordovaCall.callCordova().then(function () {
@@ -535,8 +552,10 @@
 
 
                 body.clear = function () {
-                    if (body.timer)
+                    if (body.timer) {
                         $interval.cancel(body.timer);
+                        body.timer = null;
+                    }
                     body.bindModel = null;
                     body.notifyArray = [];
                 };
@@ -633,13 +652,17 @@
                         <button class="btn btn-danger" ng-click="body.clear()">Clear Results</button>
                     </div>
                     <div class="form-group">
-                        <button class="btn btn-default" ng-click="body.startTimeoutToAlert()">Start Lithen</button>
+                        <button class="btn btn-default" ng-click="body.startTimeoutToAlert()" ng-disabled="body.timer">Start Listen</button>
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-default" ng-click="body.calcAll()">Calc All</button>
                     </div>
                 </form>
 
                 <div ng-show="body.notifyArray.length > 0">
                     <ul>
-                        <li ng-repeat="item in body.notifyArray | orderBy:'startDate':true">
+                        <li ng-repeat="item in body.notifyArray  | orderBy:'number':false">
                             Name : {{item.symbol}}<br />
                             Date : {{item.startDate}}<br />
                             High : {{item.high | number:5}} %<br />
