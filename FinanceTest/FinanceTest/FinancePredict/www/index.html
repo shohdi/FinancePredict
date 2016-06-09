@@ -365,17 +365,17 @@
 
 
                         if (isLastUp
-                            && (bindModel.high >= 65)) {
+                            && (bindModel.high > 70)) {
                             retObj.trade = 'high';
                             body.sendNotif('Trade up ' + retObj.symbol);
-                            retObj.number = retObj.high + retObj.equal;
+                            retObj.number = retObj.high ;
                             body.notifyArray.push(retObj);
                         }
                         else if (isLastDown
-                            && (bindModel.low >= 65)) {
+                            && (bindModel.low > 70)) {
                             retObj.trade = 'down';
                             body.sendNotif('Trade down ' + retObj.symbol);
-                            retObj.number = retObj.low + retObj.equal;
+                            retObj.number = retObj.low ;
                             body.notifyArray.push(retObj);
                         }
                     }
@@ -397,7 +397,7 @@
                 body.timerBody = function () {
                     var current = new Date();
                     console.log(current);
-                    if ((current.getMinutes() % 5) == 0) {
+                    if ((((current.getMinutes() +1) % 60) % 15) == 0) {
 
                         body.notifyArray = [];
 
