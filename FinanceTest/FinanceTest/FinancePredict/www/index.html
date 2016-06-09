@@ -12,52 +12,12 @@
 
 
     <script type="text/javascript">
-        angular.module("financeApp", []).config(function ($httpProvider) {
-            $httpProvider.interceptors.push('jsonpInterceptor');
-        })
-        .value("urlFormat", 'http://chartapi.finance.yahoo.com/instrument/1.0/{StockName}/chartdata;type=quote;range=1d/json')
-            .value("oneItemUrl", 'http://finance.yahoo.com/webservice/v1/symbols/{StockName}/quote?format=json&callback=finance_charts_json_callback')
+        angular.module("financeApp", [])
+        .value("urlFormat", 'http://chartapi.finance.yahoo.com/instrument/1.0/{StockName}/chartdata;type=quote;range=1d/json?callback=JSON_CALLBACK')
+            .value("oneItemUrl", 'http://finance.yahoo.com/webservice/v1/symbols/{StockName}/quote?format=json&callback=JSON_CALLBACK')
             .constant("stockName", "{StockName}")
         .constant('functionName', 'finance_charts_json_callback')
-            .factory('jsonpInterceptor', function ($timeout, $window, $q, functionName) {
-                return {
-                    'request': function (config) {
-                        if (config.method === 'JSONP') {
-                            var callbackId = angular.callbacks.counter.toString(36);
-                            if (config.callbackName != functionName) {
 
-
-                                config.callbackName = 'angular_callbacks_' + callbackId;
-                            }
-                            config.url = config.url.replace('JSON_CALLBACK', config.callbackName);
-
-                            $timeout(function () {
-                                $window[config.callbackName] = angular.callbacks['_' + callbackId];
-                            }, 0, false);
-                        }
-
-                        return config;
-                    },
-
-                    'response': function (response) {
-                        var config = response.config;
-                        if (config.method === 'JSONP') {
-                            delete $window[config.callbackName]; // cleanup
-                        }
-
-                        return response;
-                    },
-
-                    'responseError': function (rejection) {
-                        var config = rejection.config;
-                        if (config.method === 'JSONP') {
-                            delete $window[config.callbackName]; // cleanup
-                        }
-
-                        return $q.reject(rejection);
-                    }
-                };
-            })
             .service('dateService', function () {
                 var body = this;
                 body.getEndOfDate = function (startDate, minutes) {
@@ -126,19 +86,13 @@
                 service.getLiveData = function (stock) {
                     var url = oneItemUrl.replace(stockName, stock);
 
-                    return $http.jsonp(url, {
-
-                        callbackName: functionName
-                    });
+                    return $http.jsonp(url);
                 };
 
                 service.getData = function (stock) {
                     var url = urlFormat.replace(stockName, stock);
 
-                    return $http.jsonp(url, {
-
-                        callbackName: functionName
-                    });
+                    return $http.jsonp(url);
                 };
 
                 service.stocks = [
@@ -234,7 +188,7 @@
                     console.log(keydData);
 
                     //calculate it
-                   
+
 
                     var startDate = dateService.substractMinuteFromDate(endDate, config.backMinutes);
 
@@ -347,7 +301,7 @@
                 };
 
             })
-            .controller("bodyController", function (myModel, $interval, cordovaCall, dateService, $filter, deferSerialService,$q) {
+            .controller("bodyController", function (myModel, $interval, cordovaCall, dateService, $filter, deferSerialService, $q) {
                 var body = this;
                 body.cordovaCall = cordovaCall;
                 body.cordovaCall.callCordova().then(function () {
@@ -425,19 +379,18 @@
                 body.timerBody = function () {
                     var current = new Date();
                     console.log(current);
-                    if(current.getMinutes() == 14 ||
+                    if (current.getMinutes() == 14 ||
                        current.getMinutes() == 29 ||
                          current.getMinutes() == 44 ||
-                           current.getMinutes() == 59 )
-                    {
+                           current.getMinutes() == 59) {
 
 
                         body.timerBodyLoop();
 
 
-                        }
+                    }
 
-                    
+
 
                 };
 
@@ -447,18 +400,18 @@
                         def.resolve();
                         return def.promise;
                     }, null);
-                    
+
                     startDef.invoke();
                     angular.forEach(body.model.stocks, function (stock, key) {
-                        
+
                         var stockDef = deferSerialService.getDefObj(function () {
                             var def = $q.defer();
                             //code for one stock;
-                            console.log('start ',stock);
+                            console.log('start ', stock);
                             body.model.getOneItemData(stock.stockSymbol, body.config).then(function (bindModel) {
-                                
+
                                 body.testBindModel(bindModel);
-                                console.log('end ',stock);
+                                console.log('end ', stock);
                                 def.resolve();
 
                             });
@@ -699,11 +652,11 @@
 
 
                 <div ng-show="body.bindModel && !body.bindModel.error">
-                    
-                    
-                    
+
+
+
                     <hr ng-show="body.bindModel" />
-                    
+
 
 
                     <h3 ng-show="body.bindModel">Result :</h3>
