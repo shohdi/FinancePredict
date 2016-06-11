@@ -22,11 +22,11 @@
                 var body = this;
                 body.getEndOfDate = function (startDate, minutes) {
                     var retDate = body.addMinuteToDate(startDate, minutes);
-                    //while((retDate.getMinutes() % 15) > 0)
-                    //{
-                    //    retDate = body.substractMinuteFromDate(retDate, 1);
+                    while((retDate.getMinutes() % 15) > 0)
+                    {
+                        retDate = body.substractMinuteFromDate(retDate, 1);
 
-                    //}
+                    }
                     return retDate;
                 };
 
@@ -102,7 +102,7 @@
                     { stockName: 'USD/CHF', stockSymbol: 'USDCHF=X' },
                     { stockName: 'EUR/GBP', stockSymbol: 'EURGBP=X' },
                     { stockName: 'GBP/USD', stockSymbol: 'GBPUSD=X' },
-                    { stockName: 'USD/RUB', stockSymbol: 'USDRUB=X' },
+                   
                     { stockName: 'EUR/JPY', stockSymbol: 'EURJPY=X' },
                     { stockName: 'EUR/NZD', stockSymbol: 'EURNZD=X' },
                     { stockName: 'CAD/CHF', stockSymbol: 'CADCHF=X' },
@@ -192,9 +192,10 @@
 
                     var startDate = dateService.substractMinuteFromDate(endDate, config.backMinutes);
 
-                    if (startDate < keydData.first.keyDate)
+                    if (startDate < keydData.first.keyDate || startDate > keydData.last.keyDate)
                         startDate = keydData.first.keyDate;
-
+                    
+                   
 
                     return service.startAnalysisProcess(keydData, startDate, endDate, config, item);
                 };
@@ -315,9 +316,9 @@
                         else
                             return parseInt(this.minutesStr);
                     }
-                    , minutesStr: '15'
+                    , minutesStr: '30'
                     , symbol: 'EURUSD=X'
-                    , backMinutes: 90
+                    , backMinutes: 120
                     , symbolDrop: 'EURUSD=X'
                 };
 
@@ -337,17 +338,17 @@
 
                 body.testBindModel = function (bindModel) {
                     if (!bindModel.error && (((new Date() - bindModel.startDate) / 1000) <= 60)) {
-                        bindModel.orderedData = $filter('orderBy')(bindModel.allData, 'keyDate', true);
-                        var isLastUp = bindModel.orderedData.length > 4;
+                        bindModel.orderedData = $filter('orderBy')($filter('filter')(bindModel.allData, {isEnd:true}), 'keyDate', true);
+                        var isLastUp = bindModel.orderedData.length > 1;
                         if (isLastUp) {
-                            for (var i = 0; i < 5; i++) {
+                            for (var i = 0; i < 2; i++) {
                                 isLastUp = isLastUp && bindModel.orderedData[i].myhigh > bindModel.orderedData[i].mylow
                             }
                         }
 
-                        var isLastDown = bindModel.orderedData.length > 4;
+                        var isLastDown = bindModel.orderedData.length > 1;
                         if (isLastDown) {
-                            for (var i = 0; i < 5; i++) {
+                            for (var i = 0; i < 2; i++) {
                                 isLastDown = isLastDown && bindModel.orderedData[i].myhigh < bindModel.orderedData[i].mylow
                             }
                         }
@@ -662,7 +663,7 @@
 
                 <div ng-show="body.notifyArray.length > 0">
                     <ul>
-                        <li ng-repeat="item in body.notifyArray  | orderBy:'number':false">
+                        <li ng-repeat="item in body.notifyArray  | orderBy:'number':true">
                             Name : {{item.symbol}}<br />
                             Date : {{item.startDate}}<br />
                             High : {{item.high | number:5}} %<br />
@@ -742,6 +743,7 @@
                                     {{item.keyDate}}
                                     <i ng-class="body.getEndIClass(item)"></i>
                                     {{body.getEndPercentage(item) | number:2}} %
+                                    {{item.isEnd}}
                                 </td>
                                 <td>
                                     {{item.close | number:5}}
