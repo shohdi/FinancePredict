@@ -20,12 +20,13 @@
 
             .service('dateService', function () {
                 var body = this;
-                body.getEndOfDate = function (startDate, minutes) {
+                body.getEndOfDate = function (startDate, minutes, isFifteen) {
                     var retDate = body.addMinuteToDate(startDate, minutes);
-                    while((retDate.getMinutes() % 15) > 0)
-                    {
-                        retDate = body.substractMinuteFromDate(retDate, 1);
+                    if (isFifteen) {
+                        while ((retDate.getMinutes() % 15) > 0) {
+                            retDate = body.substractMinuteFromDate(retDate, 1);
 
+                        }
                     }
                     return retDate;
                 };
@@ -102,7 +103,7 @@
                     { stockName: 'USD/CHF', stockSymbol: 'USDCHF=X' },
                     { stockName: 'EUR/GBP', stockSymbol: 'EURGBP=X' },
                     { stockName: 'GBP/USD', stockSymbol: 'GBPUSD=X' },
-                   
+
                     { stockName: 'EUR/JPY', stockSymbol: 'EURJPY=X' },
                     { stockName: 'EUR/NZD', stockSymbol: 'EURNZD=X' },
                     { stockName: 'CAD/CHF', stockSymbol: 'CADCHF=X' },
@@ -194,8 +195,8 @@
 
                     if (startDate < keydData.first.keyDate || startDate > keydData.last.keyDate)
                         startDate = keydData.first.keyDate;
-                    
-                   
+
+
 
                     return service.startAnalysisProcess(keydData, startDate, endDate, config, item);
                 };
@@ -209,7 +210,7 @@
                     var avgDown = 0;
 
                     var myStartDate = startDate;
-                    var myEndDate = dateService.getEndOfDate(myStartDate, config.minutes());
+                    var myEndDate = dateService.getEndOfDate(myStartDate, config.minutes(), config.endDate15);
                     var myAllData = [];
                     while (myEndDate <= endDate) {
                         try {
@@ -257,7 +258,7 @@
                             console.log('error at start ', myStartDate, ' end ', myEndDate);
                         }
                         myStartDate = dateService.addMinuteToDate(myStartDate, 1);
-                        myEndDate = dateService.getEndOfDate(myStartDate, config.minutes());
+                        myEndDate = dateService.getEndOfDate(myStartDate, config.minutes(), config.endDate15);
                     }
 
                     var bindModel = {};
@@ -316,10 +317,12 @@
                         else
                             return parseInt(this.minutesStr);
                     }
-                    , minutesStr: '30'
+                    , minutesStr: '45'
                     , symbol: 'EURUSD=X'
-                    , backMinutes: 120
+                    , backMinutes: 300
                     , symbolDrop: 'EURUSD=X'
+                    , endDate15: false
+                    , timeToMatch: 5
                 };
 
                 body.notifyArray = [];
@@ -338,17 +341,17 @@
 
                 body.testBindModel = function (bindModel) {
                     if (!bindModel.error && (((new Date() - bindModel.startDate) / 1000) <= 60)) {
-                        bindModel.orderedData = $filter('orderBy')($filter('filter')(bindModel.allData, {isEnd:true}), 'keyDate', true);
-                        var isLastUp = bindModel.orderedData.length > 1;
+                        bindModel.orderedData = $filter('orderBy')($filter('filter')(bindModel.allData, { isEnd: true }), 'keyDate', true);
+                        var isLastUp = bindModel.orderedData.length > (body.config.timeToMatch - 1);
                         if (isLastUp) {
-                            for (var i = 0; i < 2; i++) {
+                            for (var i = 0; i < body.config.timeToMatch; i++) {
                                 isLastUp = isLastUp && bindModel.orderedData[i].myhigh > bindModel.orderedData[i].mylow
                             }
                         }
 
-                        var isLastDown = bindModel.orderedData.length > 1;
+                        var isLastDown = bindModel.orderedData.length > (body.config.timeToMatch - 1);
                         if (isLastDown) {
-                            for (var i = 0; i < 2; i++) {
+                            for (var i = 0; i < body.config.timeToMatch; i++) {
                                 isLastDown = isLastDown && bindModel.orderedData[i].myhigh < bindModel.orderedData[i].mylow
                             }
                         }
@@ -369,14 +372,14 @@
                             && (bindModel.high > 70)) {
                             retObj.trade = 'high';
                             body.sendNotif('Trade up ' + retObj.symbol);
-                            retObj.number = retObj.high ;
+                            retObj.number = retObj.high;
                             body.notifyArray.push(retObj);
                         }
                         else if (isLastDown
                             && (bindModel.low > 70)) {
                             retObj.trade = 'down';
                             body.sendNotif('Trade down ' + retObj.symbol);
-                            retObj.number = retObj.low ;
+                            retObj.number = retObj.low;
                             body.notifyArray.push(retObj);
                         }
                     }
@@ -398,7 +401,7 @@
                 body.timerBody = function () {
                     var current = new Date();
                     console.log(current);
-                    if ((((current.getMinutes() +1) % 60) % 15) == 0) {
+                    if ((((current.getMinutes() + 1) % 60) % 15) == 0) {
 
                         body.notifyArray = [];
 
@@ -565,7 +568,7 @@
                 body.calculateEndDateOfSelection = function () {
                     var minutes = body.config.minutes();
                     if (minutes > 0) {
-                        body.config.endDate = dateService.getDateWithoutSeconds(dateService.getEndOfDate(new Date(), minutes));
+                        body.config.endDate = dateService.getDateWithoutSeconds(dateService.getEndOfDate(new Date(), minutes, body.config.endDate15));
                     }
                     else {
                         body.config.endDate = null;
@@ -646,6 +649,23 @@
                         <label for="backMinutes" lass="control-label">How many minutes back ?</label>
                         <input type="text" name="backMinutes" ng-model="body.config.backMinutes" class="form-control" required />
                     </div>
+                    <div class="form-group">
+                        <label for="timeToMatch" lass="control-label">How many minutes match ?</label>
+                        <input type="text" name="timeToMatch" ng-model="body.config.timeToMatch" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+
+                        <div class="btn-group">
+                            <label class="btn btn-default">
+                                <input type="checkbox" name="endDate15" id="endDate15" ng-model="body.config.endDate15" />
+
+                                Normalize to 15 ?
+                            </label>
+                        </div>
+
+                    </div>
+
+
                     <div class="form-group">
                         <button class="btn btn-success" ng-disabled="!calculateForm.$valid" ng-click="body.showResult(body.config)">Calculate</button>
                     </div>
