@@ -196,7 +196,7 @@
                     //calculate it
 
 
-                    var startDate = dateService.substractMinuteFromDate(endDate, config.backMinutes);
+                    var startDate = dateService.substractMinuteFromDate(endDate, config.backMinutes());
 
                     if (startDate < keydData.first.keyDate || startDate > keydData.last.keyDate)
                         startDate = keydData.first.keyDate;
@@ -322,12 +322,12 @@
                         else
                             return parseInt(this.minutesStr);
                     }
-                    , minutesStr: '45'
+                    , minutesStr: '30'
                     , symbol: 'EURUSD=X'
-                    , backMinutes: 300
+                    , backMinutes: function () { return this.minutes() * 10;}
                     , symbolDrop: 'EURUSD=X'
                     , endDate15: false
-                    , timeToMatch: 5
+                    , timeToMatch: 1
                     , lastSymbol : ''
                 };
 
@@ -376,14 +376,14 @@
 
 
                         if (isLastUp
-                            && (bindModel.high > 70)) {
+                            && (bindModel.high >= 80)) {
                             retObj.trade = 'high';
                             body.sendNotif('Trade up ' + retObj.symbol);
                             retObj.number = retObj.high;
                             body.notifyArray.push(retObj);
                         }
                         else if (isLastDown
-                            && (bindModel.low > 70)) {
+                            && (bindModel.low >= 80)) {
                             retObj.trade = 'down';
                             body.sendNotif('Trade down ' + retObj.symbol);
                             retObj.number = retObj.low;
@@ -656,7 +656,7 @@
 
                     <div class="form-group">
                         <label for="backMinutes" lass="control-label">How many minutes back ?</label>
-                        <input type="text" name="backMinutes" ng-model="body.config.backMinutes" class="form-control" required />
+                        <input disabled="disabled" readonly="readonly" type="text" name="backMinutes" value="{{body.config.backMinutes()}}" class="form-control" />
                     </div>
                     <div class="form-group">
                         <label for="timeToMatch" lass="control-label">How many minutes match ?</label>
