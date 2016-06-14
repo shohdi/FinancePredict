@@ -120,7 +120,12 @@
             { stockName: 'AUD/USD', stockSymbol: 'AUDUSD=X' },
             { stockName: 'Gold', stockSymbol: 'GLD' },
             { stockName: 'Silver', stockSymbol: 'SLV' },
-
+        { stockName: 'Apple', stockSymbol: 'AAPL' },
+         { stockName: 'Google', stockSymbol: 'GOOG' },
+        { stockName: 'Facebook', stockSymbol: 'FB' },
+        { stockName: 'Amazon', stockSymbol: 'AMZN' },
+         { stockName: 'Tesla', stockSymbol: 'TSLA' },
+       
                 ];
 
                 service.getOneItemData = function (item, config) {
@@ -323,12 +328,14 @@
                     , symbolDrop: 'EURUSD=X'
                     , endDate15: false
                     , timeToMatch: 5
+                    , lastSymbol : ''
                 };
 
                 body.notifyArray = [];
 
                 body.showResult = function (config) {
-                    body.clear();
+                    //body.clear();
+                    config.lastSymbol = config.symbol;
                     body.model.getOneItemData(config.symbol, config).then(function (bindModel) {
                         body.bindModel = bindModel;
                         body.testBindModel(bindModel);
@@ -428,6 +435,7 @@
                             var def = $q.defer();
                             //code for one stock;
                             console.log('start ', stock);
+                            body.config.lastSymbol = stock.stockSymbol;
                             body.model.getOneItemData(stock.stockSymbol, body.config).then(function (bindModel) {
 
                                 body.testBindModel(bindModel);
@@ -612,6 +620,7 @@
                         <label for="minutes" class="control-label">How many minutes ?</label>
                         <select name="minutes" ng-model="body.config.minutesStr" ng-change="body.calculateEndDateOfSelection()" class="form-control">
                             <option value="">Select</option>
+                            <option value="05">05 minutes</option>
                             <option value="13">13 minutes</option>
                             <option value="15">15 minutes</option>
                             <option value="28">28 minutes</option>
@@ -680,6 +689,10 @@
                         <button class="btn btn-default" ng-click="body.calcAll()">Calc All</button>
                     </div>
                 </form>
+
+                <div>
+                    Last symbol : {{body.config.lastSymbol}}
+                </div>
 
                 <div ng-show="body.notifyArray.length > 0">
                     <ul>
