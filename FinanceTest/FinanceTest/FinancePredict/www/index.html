@@ -125,7 +125,7 @@
         { stockName: 'Facebook', stockSymbol: 'FB' },
         { stockName: 'Amazon', stockSymbol: 'AMZN' },
          { stockName: 'Tesla', stockSymbol: 'TSLA' },
-       
+
                 ];
 
                 service.getOneItemData = function (item, config) {
@@ -322,13 +322,13 @@
                         else
                             return parseInt(this.minutesStr);
                     }
-                    , minutesStr: '30'
+                    , minutesStr: '15'
                     , symbol: 'EURUSD=X'
-                    , backMinutes: function () { return this.minutes() * 10;}
+                    , backMinutes: function () { return this.minutes() * 6; }
                     , symbolDrop: 'EURUSD=X'
                     , endDate15: false
-                    , timeToMatch: 1
-                    , lastSymbol : ''
+                    , timeToMatch: 0
+                    , lastSymbol: ''
                 };
 
                 body.notifyArray = [];
@@ -376,14 +376,14 @@
 
 
                         if (isLastUp
-                            && (bindModel.high >= 80)) {
+                            && (bindModel.high >= 70)) {
                             retObj.trade = 'high';
                             body.sendNotif('Trade up ' + retObj.symbol);
                             retObj.number = retObj.high;
                             body.notifyArray.push(retObj);
                         }
                         else if (isLastDown
-                            && (bindModel.low >= 80)) {
+                            && (bindModel.low >= 70)) {
                             retObj.trade = 'down';
                             body.sendNotif('Trade down ' + retObj.symbol);
                             retObj.number = retObj.low;
