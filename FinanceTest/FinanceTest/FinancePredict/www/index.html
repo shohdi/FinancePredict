@@ -132,7 +132,8 @@
                     var def = $q.defer();
 
                     var startDate = new Date();
-                    service.getData(item).then(function (result) {
+                    var tryNum = 0;
+                    var success = function (result) {
                         console.log(result.data);
 
 
@@ -140,7 +141,21 @@
                         var bindModel = service.analysisData(result.data, item, config);
                         bindModel.startDate = startDate;
                         def.resolve(bindModel);
-                    });
+                    };
+                    var fail = function () {
+                        if (tryNum > 10) {
+                            def.resolve({error : 'No internet for item '+ item +' !'});
+                        }
+                        else {
+
+                            tryNum++;
+                            console.error('fail no ' + tryNum, item);
+                            service.getData(item).then(success, fail);
+                        }
+
+
+                    };
+                    service.getData(item).then(success,fail );
 
                     return def.promise;
                 };
@@ -327,7 +342,7 @@
                     , backMinutes: function () { return this.minutes() * 6; }
                     , symbolDrop: 'EURUSD=X'
                     , endDate15: false
-                    , timeToMatch: 0
+                    , timeToMatch: 3
                     , lastSymbol: ''
                 };
 
